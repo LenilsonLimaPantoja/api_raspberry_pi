@@ -19,6 +19,9 @@ echo "Parando serviços de modo Access Point para liberar wlan0..."
 sudo systemctl stop hostapd
 sudo systemctl stop dnsmasq
 
+echo "Removendo configuração de IP fixo da wlan0 no dhcpcd.conf..."
+sudo sed -i '/interface wlan0/,+4d' /etc/dhcpcd.conf
+
 echo "Removendo IP fixo da wlan0 e reiniciando dhcpcd para DHCP normal..."
 sudo ip addr flush dev wlan0
 sudo systemctl restart dhcpcd
