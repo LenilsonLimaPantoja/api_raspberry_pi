@@ -66,10 +66,14 @@ exports.conectWifiRaspberry = async (req, res, next) => {
             console.log('stderr:', stderr);
 
             res.status(200).send({
-                retorno: { status: 200, mensagem: `Conectando à rede Wi-Fi ${ssid}` },
+                retorno: {
+                    status: 200,
+                    mensagem: stdout.trim() || `Conectando à rede Wi-Fi ${ssid}`
+                },
                 registros: []
             });
         });
+
     } catch (error) {
         console.error("Erro ao conectar a rede:", error);
         res.status(500).send({
