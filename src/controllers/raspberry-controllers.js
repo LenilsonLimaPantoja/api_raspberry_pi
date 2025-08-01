@@ -1,6 +1,5 @@
 const fs = require('fs');
 const { execFile } = require('child_process');
-const path = '/home/pi/Desktop/api/src/scripts/configurar_wifi.sh';
 
 exports.readSerialRaspberry = async (req, res, next) => {
     try {
@@ -40,10 +39,12 @@ exports.readSerialRaspberry = async (req, res, next) => {
     }
 };
 
+const path = '/home/pi/Desktop/api/src/scripts/configurar_wifi.sh';
+
 exports.conectWifiRaspberry = async (req, res, next) => {
     try {
         const { ssid, password } = req.body;
-        console.log(ssid + ' - ' + password);
+        console.log(`SSID: ${ssid} - Password: ${password}`);
 
         if (!ssid || !password) {
             return res.status(400).json({
@@ -60,6 +61,9 @@ exports.conectWifiRaspberry = async (req, res, next) => {
                     registros: []
                 });
             }
+
+            console.log('stdout:', stdout);
+            console.log('stderr:', stderr);
 
             res.status(200).json({
                 retorno: { status: 200, mensagem: `Conectando à rede Wi-Fi ${ssid}` },
