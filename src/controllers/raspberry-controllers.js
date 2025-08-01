@@ -44,40 +44,59 @@ const path = '/home/pi/Desktop/api/src/scripts/configurar_wifi.sh';
 exports.conectWifiRaspberry = async (req, res, next) => {
     try {
         const { ssid, password } = req.body;
-        console.log(`SSID: ${ssid} - Password: ${password}`);
+        console.log(`Conectando à rede Wi-Fi - SSID: ${ssid}, PASSWORD: ${'*'.repeat(password.length)}`);
 
         if (!ssid || !password) {
             return res.status(400).send({
-                retorno: { status: 400, mensagem: 'ssid e password são obrigatórios' },
+                retorno: {
+                    status: 400,
+                    mensagem: 'ssid e password são obrigatórios'
+                },
                 registros: []
             });
         }
 
-        execFile('sudo', [path, ssid, password], (error, stdout, stderr) => {
+        const child = execFile('sudo', [path, ssid, password], { timeout: 10000 }, (error, stdout, stderr) => {
             if (error) {
-                console.error('Erro ao executar script configurar_wifi.sh:', error);
+                console.error('Erro ao executar o script:', error);
                 return res.status(500).send({
-                    retorno: { status: 500, mensagem: 'Falha ao configurar Wi-Fi', erro: error.message },
+                    retorno: {
+                        status: 500,
+                        mensagem: 'Falha ao configurar Wi-Fi.',
+                        erro: error.message
+                    },
                     registros: []
                 });
             }
 
-            console.log('stdout:', stdout);
-            console.log('stderr:', stderr);
+            const output = stdout.trim() || stderr.trim() || `Conectado à rede ${ssid}.`;
+            console.log('Saída do script:', output);
 
-            res.status(200).send({
+            return res.status(200).send({
                 retorno: {
                     status: 200,
-                    mensagem: stdout.trim() || `Conectando à rede Wi-Fi ${ssid}`
+                    mensagem: output
                 },
                 registros: []
             });
         });
 
+        // Precaução: se o cliente desconectar, mata o processo do script
+        req.on('close', () => {
+            if (child && !child.killed) {
+                child.kill();
+                console.log('Requisição cancelada. Processo filho encerrado.');
+            }
+        });
+
     } catch (error) {
-        console.error("Erro ao conectar a rede:", error);
-        res.status(500).send({
-            retorno: { status: 500, mensagem: "Erro ao conectar a rede, tente novamente.", erro: error.message },
+        console.error("Erro ao tentar executar o script de conexão Wi-Fi:", error);
+        return res.status(500).send({
+            retorno: {
+                status: 500,
+                mensagem: 'Erro ao conectar à rede.',
+                erro: error.message
+            },
             registros: []
         });
     }
