@@ -45,6 +45,9 @@ exports.conectWifiRaspberry = (req, res) => {
   try {
     const { ssid, password } = req.body;
 
+    const cpuInfo = fs.readFileSync('/proc/cpuinfo', 'utf8');
+    const serialLine = cpuInfo.split('\n').find(line => line.startsWith('Serial'));
+
     if (!ssid || !password) {
       return res.status(400).json({
         retorno: { status: 400, mensagem: 'ssid e password são obrigatórios' }
@@ -73,7 +76,8 @@ exports.conectWifiRaspberry = (req, res) => {
 
     // Resposta imediata ao cliente
     res.status(200).json({
-      retorno: { status: 200, mensagem: `Iniciando conexão com a rede ${ssid}...` }
+      retorno: { status: 200, mensagem: `Iniciando conexão com a rede ${ssid}...` },
+      registros: [{serial: serialLine.split(':')[1].trim()}]
     });
 
     // Executa o script de configuração Wi-Fi
