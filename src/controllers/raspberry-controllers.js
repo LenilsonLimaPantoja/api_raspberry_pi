@@ -1,42 +1,41 @@
 const fs = require('fs');
-const { execFile } = require('child_process');
 
 exports.readSerialRaspberry = async (req, res, next) => {
-    try {
-        const cpuInfo = fs.readFileSync('/proc/cpuinfo', 'utf8');
-        const serialLine = cpuInfo.split('\n').find(line => line.startsWith('Serial'));
-        if (serialLine) {
-            return res.status(200).send({
-                retorno: {
-                    status: 200,
-                    mensagem: 'Número de série encontrado com sucesso!'
-                },
-                registros: [
-                    {
-                        serial: serialLine.split(':')[1].trim()
-                    }
-                ]
-            });
-        } else {
-            return res.status(404).send({
-                retorno: {
-                    status: 404,
-                    mensagem: 'Número de série não encontrado.'
-                },
-                registros: []
-            });
-        }
-    } catch (error) {
-        console.error("Erro ao buscar número de série:", error);
-        res.status(500).send({
-            retorno: {
-                status: 500,
-                mensagem: "Erro ao buscar número de série, tente novamente.",
-                erro: error.message
-            },
-            registros: []
-        });
+  try {
+    const cpuInfo = fs.readFileSync('/proc/cpuinfo', 'utf8');
+    const serialLine = cpuInfo.split('\n').find(line => line.startsWith('Serial'));
+    if (serialLine) {
+      return res.status(200).send({
+        retorno: {
+          status: 200,
+          mensagem: 'Número de série encontrado com sucesso!'
+        },
+        registros: [
+          {
+            serial: serialLine.split(':')[1].trim()
+          }
+        ]
+      });
+    } else {
+      return res.status(404).send({
+        retorno: {
+          status: 404,
+          mensagem: 'Número de série não encontrado.'
+        },
+        registros: []
+      });
     }
+  } catch (error) {
+    console.error("Erro ao buscar número de série:", error);
+    res.status(500).send({
+      retorno: {
+        status: 500,
+        mensagem: "Erro ao buscar número de série, tente novamente.",
+        erro: error.message
+      },
+      registros: []
+    });
+  }
 };
 
 const { spawn, execSync } = require('child_process');
@@ -55,10 +54,8 @@ exports.conectWifiRaspberry = (req, res) => {
     // Verifica se já está conectado a uma rede
     let redeAtual = '';
     try {
-      // iwgetid -r retorna o nome da rede Wi-Fi atual (SSID)
       redeAtual = execSync('iwgetid -r').toString().trim();
-    } catch (e) {
-      // Não está conectado a nenhuma rede, ou iwgetid não retornou nada
+    } catch {
       redeAtual = '';
     }
 
@@ -71,20 +68,28 @@ exports.conectWifiRaspberry = (req, res) => {
       });
     }
 
-    const scriptPath = path.resolve(__dirname, '../scripts/configurar_wifi.sh');
+    const scriptConfigPath = path.resolve(__dirname, '../scripts/configurar_wifi.sh');
+    const scriptWatchdogPath = path.resolve(__dirname, '../scripts/watchdog_wifi.sh');
 
+    // Resposta imediata ao cliente
     res.status(200).json({
       retorno: { status: 200, mensagem: `Iniciando conexão com a rede ${ssid}...` }
     });
 
-    const child = spawn('sudo', [scriptPath, ssid, password], {
-      detached: true,
-      stdio: 'ignore'
+    // Executa o script de configuração Wi-Fi
+    const childConfig = spawn('sudo', [scriptConfigPath, ssid, password]);
+
+    childConfig.on('close', (code) => {
+      console.log(`configurar_wifi.sh finalizado com código ${code}`);
+
+      // Após tentar configurar a rede, executa o watchdog para monitorar e ativar AP se necessário
+      const childWatchdog = spawn('sudo', [scriptWatchdogPath], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      childWatchdog.unref();
+      console.log('Watchdog Wi-Fi iniciado para monitorar a conexão.');
     });
-
-    child.unref();
-
-    console.log(`Script de conexão Wi-Fi iniciado para SSID: ${ssid}`);
 
   } catch (error) {
     console.error("Erro na função conectWifiRaspberry:", error);

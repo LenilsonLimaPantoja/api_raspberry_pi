@@ -7,16 +7,20 @@
 # $1 - SSID da rede Wi-Fi
 # $2 - Senha (PSK) da rede Wi-Fi
 
+#!/bin/bash
+
+# Script para configurar Wi-Fi no modo cliente com SSID e senha passados como parâmetros
+
 SSID=$1
 PASSWORD=$2
 
-# Validação simples para garantir que os parâmetros foram passados
 if [ -z "$SSID" ] || [ -z "$PASSWORD" ]; then
     echo "Uso: $0 <SSID> <PASSWORD>"
     exit 1
 fi
 
-# Gerar o arquivo wpa_supplicant.conf com as configurações da rede
+echo "Configurando Wi-Fi para a rede '$SSID'..."
+
 cat > /etc/wpa_supplicant/wpa_supplicant.conf <<EOF
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
@@ -29,16 +33,16 @@ network={
 }
 EOF
 
-# Reinicia o serviço do wpa_supplicant para aplicar a nova configuração
 wpa_cli -i wlan0 reconfigure
 
-# Opcional: verificar se a reinicialização foi bem-sucedida e informar ao usuário
 if [ $? -eq 0 ]; then
     echo "Wi-Fi configurado para a rede '$SSID' com sucesso."
+    exit 0
 else
     echo "Erro ao reiniciar o serviço Wi-Fi."
     exit 1
 fi
+
 
 # --- INSTRUÇÕES IMPORTANTES PARA CONFIGURAÇÃO DO AMBIENTE ---
 
@@ -67,4 +71,3 @@ fi
 #    pois pode perder a conexão se os dados estiverem incorretos.
 
 # 7. Se quiser adicionar múltiplas redes, terá que ajustar o script para concatenar redes no arquivo wpa_supplicant.conf.
-
