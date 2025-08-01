@@ -40,7 +40,6 @@ exports.readSerialRaspberry = async (req, res, next) => {
 };
 
 const { spawn, execSync } = require('child_process');
-const path = require('path');
 
 exports.conectWifiRaspberry = (req, res) => {
   try {
