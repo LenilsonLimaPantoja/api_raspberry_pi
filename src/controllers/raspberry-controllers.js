@@ -1,5 +1,6 @@
 const fs = require('fs');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
+const path = '/home/pi/api_raspberry_pi/src/scripts/configurar_wifi.sh';
 
 exports.readSerialRaspberry = async (req, res, next) => {
     try {
@@ -46,69 +47,34 @@ exports.readSerialRaspberry = async (req, res, next) => {
 };
 
 exports.conectWifiRaspberry = async (req, res, next) => {
-    try {
-        const { ssid, password } = req.body;
-        if (!ssid || !password) {
-            return res.status(400).json({
-                retorno: {
-                    status: 400,
-                    mensagem: 'ssid e password são obrigatórios'
-                },
-                registros: []
-            });
-        }
-        const wpaConf = `ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-                            update_config=1
-                            country=BR
-
-                            network={
-                                ssid="${ssid}"
-                                psk="${password}"
-                                key_mgmt=WPA-PSK
-                            }
-                        `;
-
-        fs.writeFile('/etc/wpa_supplicant/wpa_supplicant.conf', wpaConf, (err) => {
-            if (err) {
-                console.error('Erro ao salvar wpa_supplicant.conf:', err);
-                return res.status(500).json({
-                    retorno: {
-                        status: 500,
-                        mensagem: 'Falha ao configurar Wi-Fi', err
-                    },
-                    registros: []
-                });
-            }
-
-            exec('sudo wpa_cli -i wlan0 reconfigure', (error, stdout, stderr) => {
-                if (error) {
-                    console.error('Erro ao reiniciar wpa_supplicant:', error);
-                    return res.status(500).json({
-                        retorno: {
-                            status: 500,
-                            mensagem: 'Falha ao reiniciar serviço Wi-Fi'
-                        },
-                        registros: []
-                    });
-                }
-                res.status(200).json({
-                    retorno: {
-                        status: 500,
-                        mensagem: `Conectando à rede Wi-Fi ${ssid}`
-                    },
-                    registros: []
-                });
-            });
-        });
-    } catch (error) {
-        console.error("Erro ao conectar a rede:", error);
-        res.status(500).send({
-            retorno: {
-                status: 500,
-                mensagem: "Erro ao conectar a rede, tente novamente.",
-                erro: error.message
-            },
-            registros: []
-        });
+  try {
+    const { ssid, password } = req.body;
+    if (!ssid || !password) {
+      return res.status(400).json({
+        retorno: { status: 400, mensagem: 'ssid e password são obrigatórios' },
+        registros: []
+      });
     }
+
+    execFile('sudo', [path, ssid, password], (error, stdout, stderr) => {
+      if (error) {
+        console.error('Erro ao executar script configurar_wifi.sh:', error);
+        return res.status(500).json({
+          retorno: { status: 500, mensagem: 'Falha ao configurar Wi-Fi', erro: error.message },
+          registros: []
+        });
+      }
+
+      res.status(200).json({
+        retorno: { status: 200, mensagem: `Conectando à rede Wi-Fi ${ssid}` },
+        registros: []
+      });
+    });
+  } catch (error) {
+    console.error("Erro ao conectar a rede:", error);
+    res.status(500).json({
+      retorno: { status: 500, mensagem: "Erro ao conectar a rede, tente novamente.", erro: error.message },
+      registros: []
+    });
+  }
 };
