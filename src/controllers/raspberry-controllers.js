@@ -39,9 +39,7 @@ exports.readSerialRaspberry = async (req, res, next) => {
     }
 };
 
-const path = '/home/pi/Desktop/api/src/scripts/configurar_wifi.sh';
-
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 
 exports.conectWifiRaspberry = (req, res) => {
@@ -54,20 +52,37 @@ exports.conectWifiRaspberry = (req, res) => {
       });
     }
 
+    // Verifica se já está conectado a uma rede
+    let redeAtual = '';
+    try {
+      // iwgetid -r retorna o nome da rede Wi-Fi atual (SSID)
+      redeAtual = execSync('iwgetid -r').toString().trim();
+    } catch (e) {
+      // Não está conectado a nenhuma rede, ou iwgetid não retornou nada
+      redeAtual = '';
+    }
+
+    if (redeAtual) {
+      return res.status(200).json({
+        retorno: {
+          status: 200,
+          mensagem: `O Raspberry já está conectado à rede '${redeAtual}'. Para conectar a uma nova rede, é necessário resetar o dispositivo.`
+        }
+      });
+    }
+
     const scriptPath = path.resolve(__dirname, '../scripts/configurar_wifi.sh');
 
-    // Responde imediatamente pro cliente
     res.status(200).json({
       retorno: { status: 200, mensagem: `Iniciando conexão com a rede ${ssid}...` }
     });
 
-    // Executa o script em background (independente da conexão HTTP)
     const child = spawn('sudo', [scriptPath, ssid, password], {
       detached: true,
       stdio: 'ignore'
     });
 
-    child.unref(); // Desacopla o processo filho
+    child.unref();
 
     console.log(`Script de conexão Wi-Fi iniciado para SSID: ${ssid}`);
 
