@@ -6,13 +6,13 @@ TIMEOUT=30   # Tempo para esperar a conexão (segundos)
 INTERFACE="wlan0"
 
 echo "Aguardando conexão Wi-Fi por $TIMEOUT segundos..."
-
 sleep $TIMEOUT
 
 IP_ATRIBUIDO=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 
-if [ -z "$IP_ATRIBUIDO" ]; then
-    echo "Não conectado. Ativando modo Access Point..."
+# Verifica se não tem IP OU se está no IP do modo AP (ex: 192.168.4.X)
+if [ -z "$IP_ATRIBUIDO" ] || [[ "$IP_ATRIBUIDO" == 192.168.4.* ]]; then
+    echo "Não conectado à rede externa. Ativando modo Access Point..."
     /home/pi/ativar_modo_ap.sh
 else
     echo "Conectado com IP $IP_ATRIBUIDO"
