@@ -7,10 +7,6 @@
 # $1 - SSID da rede Wi-Fi
 # $2 - Senha (PSK) da rede Wi-Fi
 
-#!/bin/bash
-
-# Script para configurar Wi-Fi no modo cliente com SSID e senha passados como parâmetros
-
 SSID=$1
 PASSWORD=$2
 
@@ -18,6 +14,14 @@ if [ -z "$SSID" ] || [ -z "$PASSWORD" ]; then
     echo "Uso: $0 <SSID> <PASSWORD>"
     exit 1
 fi
+
+echo "Parando serviços de modo Access Point para liberar wlan0..."
+sudo systemctl stop hostapd
+sudo systemctl stop dnsmasq
+
+echo "Removendo IP fixo da wlan0 e reiniciando dhcpcd para DHCP normal..."
+sudo ip addr flush dev wlan0
+sudo systemctl restart dhcpcd
 
 echo "Configurando Wi-Fi para a rede '$SSID'..."
 
@@ -42,7 +46,6 @@ else
     echo "Erro ao reiniciar o serviço Wi-Fi."
     exit 1
 fi
-
 
 # --- INSTRUÇÕES IMPORTANTES PARA CONFIGURAÇÃO DO AMBIENTE ---
 
