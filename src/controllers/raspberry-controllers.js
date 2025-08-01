@@ -47,7 +47,7 @@ exports.conectWifiRaspberry = async (req, res, next) => {
         console.log(`SSID: ${ssid} - Password: ${password}`);
 
         if (!ssid || !password) {
-            return res.status(400).json({
+            return res.status(400).send({
                 retorno: { status: 400, mensagem: 'ssid e password são obrigatórios' },
                 registros: []
             });
@@ -56,7 +56,7 @@ exports.conectWifiRaspberry = async (req, res, next) => {
         execFile('sudo', [path, ssid, password], (error, stdout, stderr) => {
             if (error) {
                 console.error('Erro ao executar script configurar_wifi.sh:', error);
-                return res.status(500).json({
+                return res.status(500).send({
                     retorno: { status: 500, mensagem: 'Falha ao configurar Wi-Fi', erro: error.message },
                     registros: []
                 });
@@ -65,14 +65,14 @@ exports.conectWifiRaspberry = async (req, res, next) => {
             console.log('stdout:', stdout);
             console.log('stderr:', stderr);
 
-            res.status(200).json({
+            res.status(200).send({
                 retorno: { status: 200, mensagem: `Conectando à rede Wi-Fi ${ssid}` },
                 registros: []
             });
         });
     } catch (error) {
         console.error("Erro ao conectar a rede:", error);
-        res.status(500).json({
+        res.status(500).send({
             retorno: { status: 500, mensagem: "Erro ao conectar a rede, tente novamente.", erro: error.message },
             registros: []
         });
