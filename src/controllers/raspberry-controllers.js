@@ -43,6 +43,8 @@ exports.readSerialRaspberry = async (req, res, next) => {
 exports.conectWifiRaspberry = async (req, res, next) => {
     try {
         const { ssid, password } = req.body;
+        console.log(ssid + ' - ' + password);
+
         if (!ssid || !password) {
             return res.status(400).json({
                 retorno: { status: 400, mensagem: 'ssid e password são obrigatórios' },
