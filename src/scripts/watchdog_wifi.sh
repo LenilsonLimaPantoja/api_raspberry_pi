@@ -13,7 +13,7 @@ IP_ATRIBUIDO=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -
 # Verifica se não tem IP OU se está no IP do modo AP (ex: 192.168.4.X)
 if [ -z "$IP_ATRIBUIDO" ] || [[ "$IP_ATRIBUIDO" == 192.168.4.* ]]; then
     echo "Não conectado à rede externa. Ativando modo Access Point..."
-    /home/pi/ativar_modo_ap.sh
+    /home/pi/Desktop/api_raspberry_pi/src/scripts/ativar_modo_ap.sh
 else
     echo "Conectado com IP $IP_ATRIBUIDO"
 fi
@@ -21,4 +21,4 @@ fi
 # --- INSTRUÇÕES IMPORTANTES PARA CONFIGURAÇÃO DO AMBIENTE ---
 
 # 1. Torne este script executável:
-#    sudo chmod +x /home/pi/Desktop/api/src/scripts/watchdog_wifi.sh
+#    sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/watchdog_wifi.sh
