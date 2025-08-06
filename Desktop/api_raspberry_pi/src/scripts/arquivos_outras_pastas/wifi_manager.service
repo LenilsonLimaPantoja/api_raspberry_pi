@@ -1,0 +1,34 @@
+[Unit]
+# Descrição do serviço para facilitar a identificação no systemd
+Description=Gerenciador de Wi-Fi: Cliente ou Access Point
+
+# OBS: Este arquivo deve ser salvo na pasta /etc/systemd/system
+
+# Define que este serviço deve iniciar somente depois que a rede básica estiver disponível
+After=network.target network-online.target
+
+# Garante que o systemd espere a rede estar online antes de executar este serviço
+Wants=network-online.target
+
+[Service]
+# Tipo "oneshot" indica que o serviço executa um comando/script e termina (não fica rodando em background)
+Type=oneshot
+
+# Define o caminho completo para o script que será executado por este serviço
+ExecStart=/home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh
+
+# Faz com que o systemd considere o serviço "ativo" mesmo após o script terminar a execução
+RemainAfterExit=true
+
+[Install]
+# Define que o serviço será iniciado automaticamente no boot, no nível multiusuário (modo padrão do Raspberry Pi)
+WantedBy=multi-user.target
+
+
+# Para ativar o serviço, use os seguintes comandos:
+# sudo systemctl daemon-reload
+# Recarrega as configurações do systemd (necessário após criar/alterar serviços)
+# sudo systemctl enable wifi_manager.service
+# Habilita o serviço para iniciar automaticamente no boot
+# sudo systemctl start wifi_manager.service
+# Inicia o serviço imediatamente

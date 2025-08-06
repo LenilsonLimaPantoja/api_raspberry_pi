@@ -1,0 +1,139 @@
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/ativar_modo_ap_reboot.sh 
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/configurar_wifi.sh 
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/watchdog_wifi.sh 
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh 
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/button_listener.js 
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl start dhcpcd
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl start wifi_manager.service
+Job for wifi_manager.service failed because the control process exited with error code.
+See "systemctl status wifi_manager.service" and "journalctl -xe" for details.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl daemon-reexec
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl daemon-reload
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo nano /etc/systemd/system/wifi_manager.service
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl daemon-reload
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl restart wifi_manager.service
+Job for wifi_manager.service failed because the control process exited with error code.
+See "systemctl status wifi_manager.service" and "journalctl -xe" for details.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ ls -l /home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh
+-rwxr-xr-x 1 pi pi 3127 ago  6 09:53 /home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ file /home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh
+/home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh: Bourne-Again shell script, UTF-8 Unicode text executable, with CRLF line terminators
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ cat /etc/systemd/system/wifi_manager.service
+[Unit]
+# Descrição do serviço para facilitar identificação
+Description=Gerenciador de Wi-Fi: Cliente ou Access Point
+
+# Esse serviço será iniciado após a rede básica estar disponível
+After=network.target network-online.target
+
+# Garante que o serviço espere a rede estar online
+Wants=network-online.target
+
+[Service]
+# Tipo "oneshot" indica que é um script que roda e termina (não é contínuo)
+Type=oneshot
+
+# Caminho completo do script que será executado
+ExecStart=/home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.sh
+
+# Mantém o serviço "ativo" no systemd após o script finalizar
+RemainAfterExit=true
+
+[Install]
+# Inicia esse serviço no boot em modo multiusuário (modo padrão do Raspberry)
+WantedBy=multi-user.target
+
+
+#Passos para ativar:
+#sudo systemctl daemon-reload
+#sudo systemctl enable wifi-manager.service
+#sudo systemctl start wifi-manager.service
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ watch -n 1 ip a show wlan0
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ journalctl -u dhcpcd --no-pager -n 50
+-- Logs begin at Wed 2025-08-06 14:50:48 -04, end at Wed 2025-08-06 15:29:37 -04. --
+ago 06 15:09:22 raspberrypi dhcpcd[9334]: DUID 00:01:00:01:28:28:14:29:b8:27:eb:13:b5:40
+ago 06 15:09:22 raspberrypi dhcpcd[9334]: wlan0: IAID eb:46:e0:15
+ago 06 15:09:22 raspberrypi dhcpcd[9334]: wlan0: soliciting an IPv6 router
+ago 06 15:09:23 raspberrypi dhcpcd[9334]: wlan0: soliciting a DHCP lease
+ago 06 15:09:28 raspberrypi dhcpcd[9334]: wlan0: probing for an IPv4LL address
+ago 06 15:09:33 raspberrypi dhcpcd[9334]: wlan0: using IPv4LL address 169.254.253.198
+ago 06 15:09:33 raspberrypi dhcpcd[9334]: wlan0: adding route to 169.254.0.0/16
+ago 06 15:09:33 raspberrypi dhcpcd[9334]: wlan0: adding default route
+ago 06 15:09:33 raspberrypi dhcpcd[9334]: wlan0: pid 9334 deleted default route
+ago 06 15:09:34 raspberrypi dhcpcd[9334]: wlan0: no IPv6 Routers available
+ago 06 15:12:07 raspberrypi systemd[1]: Stopping dhcpcd on all interfaces...
+ago 06 15:12:07 raspberrypi dhcpcd[9618]: sending signal TERM to pid 9334
+ago 06 15:12:07 raspberrypi dhcpcd[9618]: waiting for pid 9334 to exit
+ago 06 15:12:07 raspberrypi dhcpcd[9618]: sending signal TERM to pid 9334
+ago 06 15:12:07 raspberrypi dhcpcd[9618]: waiting for pid 9334 to exit
+ago 06 15:12:07 raspberrypi dhcpcd[9334]: received SIGTERM, stopping
+ago 06 15:12:07 raspberrypi dhcpcd[9334]: wlan0: removing interface
+ago 06 15:12:07 raspberrypi dhcpcd[9334]: wlan0: adding default route
+ago 06 15:12:07 raspberrypi dhcpcd[9334]: eth0: removing interface
+ago 06 15:12:07 raspberrypi dhcpcd[9334]: dhcpcd exited
+ago 06 15:12:07 raspberrypi systemd[1]: dhcpcd.service: Succeeded.
+ago 06 15:12:07 raspberrypi systemd[1]: Stopped dhcpcd on all interfaces.
+ago 06 15:12:07 raspberrypi systemd[1]: Starting dhcpcd on all interfaces...
+ago 06 15:12:08 raspberrypi dhcpcd[9621]: dev: loaded udev
+ago 06 15:12:08 raspberrypi dhcpcd[9621]: forked to background, child pid 9624
+ago 06 15:12:08 raspberrypi systemd[1]: Started dhcpcd on all interfaces.
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: wlan0: connected to Access Point `'
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: eth0: waiting for carrier
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: DUID 00:01:00:01:28:28:14:29:b8:27:eb:13:b5:40
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: wlan0: IAID eb:46:e0:15
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: wlan0: probing address 192.168.0.1/24
+ago 06 15:12:08 raspberrypi dhcpcd[9624]: wlan0: soliciting an IPv6 router
+ago 06 15:12:13 raspberrypi dhcpcd[9624]: wlan0: using static address 192.168.0.1/24
+ago 06 15:12:13 raspberrypi dhcpcd[9624]: wlan0: adding route to 192.168.0.0/24
+ago 06 15:12:13 raspberrypi systemd[1]: dhcpcd.service: Main process exited, code=killed, status=11/SEGV
+ago 06 15:12:13 raspberrypi systemd[1]: dhcpcd.service: Failed with result 'signal'.
+ago 06 15:12:23 raspberrypi systemd[1]: Starting dhcpcd on all interfaces...
+ago 06 15:12:23 raspberrypi dhcpcd[9720]: main: control_open: Connection refused
+ago 06 15:12:23 raspberrypi dhcpcd[9720]: main: control_open: Connection refused
+ago 06 15:12:23 raspberrypi dhcpcd[9720]: dev: loaded udev
+ago 06 15:12:23 raspberrypi dhcpcd[9720]: forked to background, child pid 9722
+ago 06 15:12:23 raspberrypi systemd[1]: Started dhcpcd on all interfaces.
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: wlan0: connected to Access Point `'
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: eth0: waiting for carrier
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: DUID 00:01:00:01:28:28:14:29:b8:27:eb:13:b5:40
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: wlan0: IAID eb:46:e0:15
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: wlan0: using static address 192.168.0.1/24
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: wlan0: adding route to 192.168.0.0/24
+ago 06 15:12:23 raspberrypi dhcpcd[9722]: wlan0: soliciting an IPv6 router
+ago 06 15:12:35 raspberrypi dhcpcd[9722]: wlan0: no IPv6 Routers available
+pi@raspberrypi:~/Desktop/api_raspberry_pi $
+
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl stop wpa_supplicant
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl stop dhcpcd
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo rfkill unblock wifi
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo ifconfig wlan0 up
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl restart hostapd
+Job for hostapd.service failed because the control process exited with error code.
+See "systemctl status hostapd.service" and "journalctl -xe" for details.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl restart hostapd
+Job for hostapd.service failed because the control process exited with error code.
+See "systemctl status hostapd.service" and "journalctl -xe" for details.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ ps aux | grep wpa_supplicant
+pi       11320  0.0  0.0   7380   528 pts/0    S+   15:33   0:00 grep --color=auto wpa_supplicant
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl status wpa_supplicant.service
+● wpa_supplicant.service - WPA supplicant
+   Loaded: loaded (/lib/systemd/system/wpa_supplicant.service; enabled; vendor preset: enabled)
+   Active: inactive (dead) since Wed 2025-08-06 15:32:03 -04; 1min 39s ago
+  Process: 413 ExecStart=/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant (code=exited, status=0/SUCCESS)
+ Main PID: 413 (code=exited, status=0/SUCCESS)
+
+ago 06 14:50:54 raspberrypi systemd[1]: Starting WPA supplicant...
+ago 06 14:50:55 raspberrypi wpa_supplicant[413]: Successfully initialized wpa_supplicant
+ago 06 14:50:55 raspberrypi systemd[1]: Started WPA supplicant.
+ago 06 15:32:03 raspberrypi systemd[1]: Stopping WPA supplicant...
+ago 06 15:32:03 raspberrypi systemd[1]: wpa_supplicant.service: Succeeded.
+ago 06 15:32:03 raspberrypi systemd[1]: Stopped WPA supplicant.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl stop wpa_supplicant
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ sudo systemctl disable wpa_supplicant
+Removed /etc/systemd/system/dbus-fi.w1.wpa_supplicant1.service.
+Removed /etc/systemd/system/multi-user.target.wants/wpa_supplicant.service.
+pi@raspberrypi:~/Desktop/api_raspberry_pi $ 
+
+
+
+

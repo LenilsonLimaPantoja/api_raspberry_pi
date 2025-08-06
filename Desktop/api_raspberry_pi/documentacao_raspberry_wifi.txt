@@ -1,0 +1,161 @@
+Documentação do Projeto Raspberry Pi - API de Gerenciamento Wi-Fi
+
+   1. Descrição do Projeto
+      Este projeto permite gerenciar a conexão Wi-Fi do Raspberry Pi via API RESTful, alternando entre modo cliente Wi-Fi e modo Access Point (AP). Inclui scripts bash para configurar o Wi-Fi, monitorar a conexão e ativar o AP em caso de falha. Um botão físico pode ser usado para forçar o modo AP.
+
+   2. Estrutura dos Arquivos Principais:
+
+      app.js: Configuração do servidor Express (middlewares, rotas, tratamento de erros).
+
+      server.js: Ponto de entrada para iniciar o servidor Express.
+
+      src/routes/raspberry.routes.js: Rotas da API relacionadas ao Raspberry Pi.
+
+      src/controllers/raspberry-controllers.js: Controladores para as rotas — lidar com leitura do serial e conexão Wi-Fi.
+
+      src/scripts/configurar_wifi.sh: Script bash para configurar a conexão Wi-Fi.
+
+      src/scripts/watchdog_wifi.sh: Script que monitora conexão e ativa AP se falhar.
+
+      src/scripts/ativar_modo_ap_reboot.sh: Script que configura o Raspberry como Access Point e reinicia.
+
+      src/scripts/wifi_manager.sh: Script para gerenciar o estado do Wi-Fi, iniciando modo cliente ou AP conforme conexão.
+
+      src/scripts/button_listener.js: Script Node.js para monitorar botão GPIO e ativar modo AP via script.
+
+      src/log/: Pasta onde ficam os logs dos scripts.
+
+
+   3. Requisitos
+      Raspberry Pi com sistema Raspbian/Debian.
+
+      Node.js instalado (versão recomendada 16+).
+
+      Pacotes necessários no Raspberry Pi:
+         hostapd, dnsmasq, wpa_supplicant, dhcpcd
+         (instale com: sudo apt update && sudo apt install hostapd dnsmasq wpa_supplicant dhcpcd)
+
+      Permissões para executar scripts com sudo.
+
+   4. Configuração Inicial no Raspberry Pi
+      4.1 Permita execução dos scripts:
+         sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/scripts/*.sh
+         sudo chmod +x /home/pi/Desktop/api_raspberry_pi/src/button_listener.js
+
+      4.2 Configure o serviço systemd para gerenciar o Wi-Fi automaticamente:
+
+         Copie o arquivo wifi_manager.service para /etc/systemd/system/:
+            sudo cp /home/pi/Desktop/api_raspberry_pi/src/scripts/wifi_manager.service /etc/systemd/system/
+         Recarregue o systemd:
+            sudo systemctl daemon-reload
+         Ative o serviço para iniciar no boot:
+            sudo systemctl enable wifi_manager.service
+         Inicie o serviço:
+            sudo systemctl start wifi_manager.service
+
+      4.3 Configure o Node.js
+
+         Navegue até a pasta do projeto:
+            cd /home/pi/Desktop/api_raspberry_pi/
+         Instale dependências (crie o package.json antes, se necessário):
+            npm install express body-parser morgan onoff ou npm install
+
+         Inicie o monitor do botão (opcional, para ativar modo AP via botão físico):
+            node src/button_listener.js
+
+   5. Executando a API Express
+      Para iniciar o servidor manualmente, execute:
+         npm start
+
+      O servidor estará disponível na porta definida (default 5002). Pode testar as rotas:
+
+         GET /raspberry/serial → Retorna o número serial do Raspberry Pi.
+
+         POST /raspberry/connect-wifi → Envia JSON com { "ssid": "NOME_DA_REDE", "password": "SENHA" } para conectar à rede Wi-Fi.
+
+   6. Testes via curl (exemplo)
+      Testar serial:
+         curl http://localhost:5002/raspberry/serial
+
+      Testar conexão Wi-Fi (substitua SSID e PASSWORD):
+         curl -X POST http://localhost:5002/raspberry/connect-wifi -H "Content-Type: application/json" -d '{"ssid":"MinhaRede","password":"MinhaSenha"}'
+
+   7. Logs
+      Todos os logs dos scripts ficam em:
+         /home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log
+
+      Pode acompanhar com:
+         tail -f /home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log
+
+   8. Comandos úteis para manutenção
+      Ver status do serviço wifi_manager:
+         sudo systemctl status wifi_manager.service
+
+      Reiniciar o serviço:
+         sudo systemctl restart wifi_manager.service
+
+      Parar o serviço:
+         sudo systemctl stop wifi_manager.service
+
+      Verificar logs do systemd para o serviço:
+         journalctl -u wifi_manager.service -f
+
+   9. Resumo do fluxo
+      No boot, o serviço wifi_manager executa o script que tenta conectar o Raspberry à rede Wi-Fi configurada.
+
+      Se não conseguir, ativa o modo Access Point.
+
+      O script watchdog monitora a conexão e pode ativar AP se a conexão falhar posteriormente.
+
+      O botão físico (GPIO17) pode ser pressionado para forçar modo Access Point via script.
+
+      A API Node.js permite consultar serial e configurar Wi-Fi remotamente.
+
+      executar pm2 automatico
+         Passos para criar os serviços PM2
+            1. Instalar o PM2 globalmente (se ainda não instalou)
+               sudo npm install -g pm2
+
+            2. Criar o serviço PM2 para o script do botão GPIO
+               Supondo que seu script Node do botão está em:
+
+                  /home/pi/Desktop/api_raspberry_pi/src/scripts/button_listener.js
+                  pm2 start /home/pi/Desktop/api_raspberry_pi/src/scripts/button_listener.js --name button-listener
+                  pm2 save
+                  pm2 startup
+
+                  O comando pm2 startup gera o comando para iniciar o PM2 no boot. Siga as instruções que ele mostrar, geralmente algo como:
+                  sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u pi --hp /home/pi
+
+                  E depois rode:
+                     sudo systemctl enable pm2-pi
+                     sudo systemctl start pm2-pi
+
+            3. Criar o serviço PM2 para a API Express
+               Supondo que sua API está em:
+
+               /home/pi/Desktop/api_raspberry_pi/app.js
+
+               pm2 start /home/pi/Desktop/api_raspberry_pi/app.js --name api-raspberry-pi
+               pm2 save
+
+               (Siga o mesmo processo de pm2 startup se ainda não tiver rodado.)
+
+            4. Comandos úteis PM2
+               Para ver status dos processos PM2:
+                  pm2 list
+
+               Para ver logs do serviço do botão:
+                  pm2 logs button-listener
+
+               Para ver logs da API:
+                  pm2 logs api-raspberry-pi
+
+               Para reiniciar algum serviço:
+                  pm2 restart button-listener
+                  pm2 restart api-raspberry-pi
+
+               Para parar algum serviço:
+                  pm2 stop button-monitor
+                  pm2 stop raspberry-api
+
