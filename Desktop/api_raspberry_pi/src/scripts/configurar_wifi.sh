@@ -8,6 +8,30 @@ PASSWORD=$2
 LOG_FILE="/home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log"
 exec >> "$LOG_FILE" 2>&1
 
+# LED principal (pino físico 13 = GPIO27)
+LED_GPIO=27
+
+# Função para piscar LED rapidamente
+piscar_led_rapido() {
+  if [ ! -d /sys/class/gpio/gpio$LED_GPIO ]; then
+    echo $LED_GPIO > /sys/class/gpio/export
+    sleep 1
+  fi
+  echo out > /sys/class/gpio/gpio$LED_GPIO/direction
+
+  (
+    while true; do
+      echo 1 > /sys/class/gpio/gpio$LED_GPIO/value
+      sleep 0.3
+      echo 0 > /sys/class/gpio/gpio$LED_GPIO/value
+      sleep 0.3
+    done
+  ) &
+  echo $! > /tmp/led_blink.pid
+}
+
+piscar_led_rapido
+
 if [ -z "$SSID" ] || [ -z "$PASSWORD" ]; then
     echo "[ERRO] Uso: $0 <SSID> <PASSWORD>"
     exit 1
@@ -58,13 +82,11 @@ echo "[INFO] Verificando conexão..."
 STATE=$(wpa_cli -i wlan0 status | grep wpa_state= | cut -d= -f2)
 IP=$(ip -4 addr show wlan0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || true)
 
-# Pega o serial completo do Raspberry Pi
 SERIAL=$(awk '/Serial/ {print $3}' /proc/cpuinfo)
 NEW_HOSTNAME="raspberrypi-$SERIAL"
 
 echo "[INFO] Definindo novo hostname: $NEW_HOSTNAME"
 
-# Altera o hostname ao vivo e nos arquivos persistentes
 sudo hostnamectl set-hostname "$NEW_HOSTNAME"
 echo "$NEW_HOSTNAME" | sudo tee /etc/hostname > /dev/null
 sudo sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$NEW_HOSTNAME/" /etc/hosts
