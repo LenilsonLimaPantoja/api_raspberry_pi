@@ -3,7 +3,17 @@
 LOG_FILE="/home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log"
 exec >> "$LOG_FILE" 2>&1
 
-LED_GPIO=27  # pino físico 13 (GPIO27)
+# Apaga GPIO27 (pino físico 13)
+GPIO27=27
+if [ ! -d /sys/class/gpio/gpio$GPIO27 ]; then
+  echo $GPIO27 > /sys/class/gpio/export
+  sleep 1
+fi
+echo out > /sys/class/gpio/gpio$GPIO27/direction
+echo 0 > /sys/class/gpio/gpio$GPIO27/value
+
+# Configura GPIO22 (pino físico 15) para LED piscando
+LED_GPIO=22  # pino físico 15 (GPIO22)
 
 echo "[INFO] --- Iniciando modo Access Point ---"
 
