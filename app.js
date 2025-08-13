@@ -4,7 +4,8 @@ const morgan = require('morgan');  // Middleware para logs HTTP
 const app = express();  // Cria a instância do Express
 
 // Importando as rotas do módulo raspberry.routes.js
-const raspberryController = require('./src/routes/raspberry.routes');
+const raspberryRoutes = require('./src/routes/raspberry.routes');
+const balancaController = require('./src/controllers/balanca-controller');
 
 // Usa o morgan para mostrar logs de requisições no console (modo 'dev')
 app.use(morgan('dev'));
@@ -16,11 +17,11 @@ app.use(bodyParser.json());
 // Configuração do CORS para permitir que frontends acessem a API
 app.use((req, res, next) => {
     // Permite acesso de qualquer origem
-    res.header("Access-Control-Allow-Origin", "*"); 
-    
+    res.header("Access-Control-Allow-Origin", "*");
+
     // Permite que cookies e credenciais sejam enviados (se necessário)
-    res.header("Access-Control-Allow-Credentials", "true"); 
-    
+    res.header("Access-Control-Allow-Credentials", "true");
+
     // Permite esses headers nas requisições
     res.header(
         "Access-Control-Allow-Headers",
@@ -40,7 +41,9 @@ app.use((req, res, next) => {
 });
 
 // Define as rotas a partir do caminho '/raspberry', usando o controlador importado
-app.use('/raspberry', raspberryController);
+app.use('/raspberry', raspberryRoutes);
+
+balancaController.iniciarLeituraBalanca();
 
 // Middleware para tratar URLs que não foram encontradas nas rotas anteriores
 app.use((req, res, next) => {
