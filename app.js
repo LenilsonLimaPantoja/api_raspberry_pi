@@ -5,7 +5,6 @@ const app = express();  // Cria a instância do Express
 
 // Importando as rotas do módulo raspberry.routes.js
 const raspberryRoutes = require('./src/routes/raspberry.routes');
-const balancaController = require('./src/controllers/balanca-controller');
 
 // Usa o morgan para mostrar logs de requisições no console (modo 'dev')
 app.use(morgan('dev'));
@@ -42,8 +41,6 @@ app.use((req, res, next) => {
 
 // Define as rotas a partir do caminho '/raspberry', usando o controlador importado
 app.use('/raspberry', raspberryRoutes);
-
-balancaController.iniciarLeituraBalanca();
 
 // Middleware para tratar URLs que não foram encontradas nas rotas anteriores
 app.use((req, res, next) => {
