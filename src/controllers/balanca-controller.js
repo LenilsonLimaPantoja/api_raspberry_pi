@@ -1,20 +1,16 @@
-const HX711 = require('hx711-rpi');
+const HX711 = require('@shroudedcode/hx711');
 const axios = require('axios');
 const fs = require('fs');
 
 const DT_PIN = 5;
 const SCK_PIN = 6;
-const SCALE = 103.33;
 
-const hx = new HX711(DT_PIN, SCK_PIN);
-hx.setScale(SCALE);
-hx.tare();
+const sensor = new HX711({
+  dataPin: DT_PIN,
+  clockPin: SCK_PIN,
+  gain: 128
+});
 
-console.log('Balança pronta.');
-
-let pesoAnterior = null;
-
-// Função para obter o serial do Raspberry Pi
 const getSerial = () => {
   try {
     const cpuInfo = fs.readFileSync('/proc/cpuinfo', 'utf8');
@@ -27,29 +23,34 @@ const getSerial = () => {
 };
 
 const SERIAL_RPI = getSerial();
+let pesoAnterior = null;
 
-// Leitura contínua e envio para a API externa
 exports.iniciarLeituraBalanca = () => {
-  setInterval(async () => {
-    try {
-      const peso = Math.max(0, parseInt(hx.getUnits(5)));
-
-      if (peso !== pesoAnterior) {
-        pesoAnterior = peso;
-        console.log(`Peso lido: ${peso} g`);
-
+  sensor.tare()
+    .then(() => {
+      console.log('Balança pronta.');
+      setInterval(async () => {
         try {
-          await axios.post('http://api-pesagem.vercel.app/peso-caixa', {
-            peso_atual: peso,
-            identificador_balanca: SERIAL_RPI
-          });
-          console.log('Peso enviado com sucesso para api-pesagem.vercel.app');
+          const peso = Math.max(0, parseInt(await sensor.getUnits(5)));
+
+          if (peso !== pesoAnterior) {
+            pesoAnterior = peso;
+            console.log(`Peso lido: ${peso} g`);
+
+            try {
+              await axios.post('http://api-pesagem.vercel.app/peso-caixa', {
+                peso_atual: peso,
+                identificador_balanca: SERIAL_RPI
+              });
+              console.log('Peso enviado com sucesso para api-pesagem.vercel.app');
+            } catch (err) {
+              console.error('Erro ao enviar peso:', err.message);
+            }
+          }
         } catch (err) {
-          console.error('Erro ao enviar peso:', err.message);
+          console.error('Erro ao ler o peso:', err.message);
         }
-      }
-    } catch (err) {
-      console.error('Erro ao ler o peso:', err.message);
-    }
-  }, 2000); // a cada 2 segundos
+      }, 2000);
+    })
+    .catch(err => console.error('Erro ao tarear a balança:', err));
 };
