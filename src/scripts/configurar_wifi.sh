@@ -5,6 +5,10 @@
 SSID=$1
 PASSWORD=$2
 
+# Define arquivo de log para salvar toda a saída do script (stdout e stderr)
+LOG_FILE="/home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log"
+exec >> "$LOG_FILE" 2>&1
+
 # Define o GPIO do LED principal (pino físico 13 = GPIO27)
 LED_GPIO=27
 

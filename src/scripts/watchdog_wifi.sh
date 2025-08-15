@@ -7,6 +7,8 @@ TIMEOUT_TOTAL=25
 WAIT_TIME=5
 # Interface de rede Wi-Fi que será monitorada
 INTERFACE="wlan0"
+# Caminho do arquivo de log onde será salvo o output do script
+LOG_FILE="/home/pi/Desktop/api_raspberry_pi/src/log/conectar_wifi.log"
 # GPIO do LED que indica status (pino físico 13 = GPIO27)
 LED_GPIO=27
 # Caminho do script que ativa o modo Access Point (AP) em caso de falha
@@ -41,6 +43,9 @@ led_off() {
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
+
+# Redireciona stdout e stderr para o arquivo de log
+exec >> "$LOG_FILE" 2>&1
 
 log "Iniciando watchdog Wi-Fi..."
 
